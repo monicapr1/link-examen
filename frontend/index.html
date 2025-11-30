@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkExam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #ffffff; --text: #111; --gray: #f5f5f7; --accent: #000; --danger: #ff4757; --success: #2ecc71; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 480px; padding: 20px; box-sizing: border-box; }
+        
+        input, button, select { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 12px; border: 1px solid #e1e1e1; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--accent); }
+        button { background: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer; }
+        button:hover { opacity: 0.8; }
+        button.secondary { background: var(--gray); color: var(--text); }
+        button.outline { background: transparent; border: 1px solid #ddd; color: #555; }
+        
+        .logo { font-weight: 600; font-size: 1.2rem; margin-bottom: 40px; display: block; text-align: center; letter-spacing: -0.5px; }
+        
+        .profile-header { text-align: center; margin-bottom: 30px; }
+        .avatar { width: 110px; height: 110px; border-radius: 50%; background: #f0f0f0; margin-bottom: 15px; border: 1px solid #eee; object-fit: cover; }
+        
+        /* Links */
+        .link-btn { display: flex; justify-content: space-between; align-items: center; background: var(--gray); color: var(--text); text-decoration: none; padding: 16px; border-radius: 14px; margin-bottom: 12px; transition: transform 0.1s; border: 1px solid transparent; position: relative; }
+        .link-btn:hover { border-color: #ddd; transform: scale(1.01); }
+        
+        /* Badges y Stats */
+        .snap-badge { background: var(--danger); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; font-weight: bold; }
+        .stat-badge { font-size: 0.8rem; color: #666; background: #e1e1e1; padding: 2px 8px; border-radius: 6px; margin-right: 5px; }
+        
+        .view { display: none; opacity: 0; transition: opacity 0.3s; }
+        .view.active { display: block; opacity: 1; }
+        .notification { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; display: none; }
+        
+        .qr-container { text-align: center; margin: 20px 0; padding: 20px; background: #fff; border: 1px solid #eee; border-radius: 20px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .qr-container img { width: 180px; height: 180px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">LinkExam.</div>
+
+        <!-- VISTA LOGIN -->
+        <div id="view-login" class="view active">
+            <h2 style="text-align: center; font-weight: 300;">Tu identidad digital.</h2>
+            <input type="email" id="email" placeholder="tu@email.com">
+            <input type="text" id="name" placeholder="Tu Nombre">
+            <input type="text" id="bio" placeholder="Una descripción corta">
+            <button onclick="handleLogin()">Comenzar</button>
+        </div>
+
+        <!-- VISTA DASHBOARD (ADMIN) -->
+        <div id="view-dashboard" class="view">
+            <div class="profile-header">
+                <img src="" id="dash-avatar" class="avatar">
+                <h3 id="dash-name"></h3>
+                <button class="outline" onclick="toggleQR()" style="width: auto; padding: 8px 15px; font-size: 0.8rem; margin-top: 5px;">Mostrar mi QR</button>
+                
+                <div id="qr-box" class="qr-container">
+                    <img id="qr-img" src="" alt="Cargando QR...">
+                    <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Escanea para visitar tu perfil</p>
+                </div>
+            </div>
+
+            <div style="background: #fafafa; padding: 20px; border-radius: 16px; margin-bottom: 20px; border: 1px solid #eee;">
+                <h4 style="margin: 0 0 15px 0;">Tus Links</h4>
+                
+                <!-- Lista de Links con Stats -->
+                <div id="admin-links-list" style="margin-bottom: 20px;">
+                    <!-- Se llena con JS -->
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <input type="text" id="new-title" placeholder="Título (ej. Promo Flash)">
+                <input type="url" id="new-url" placeholder="URL (https://...)">
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="link-type" onchange="toggleLimitInput()">
+                        <option value="normal">Enlace Normal</option>
+                        <option value="snap">SnapLink (Límite de Clics)</option>
+                    </select>
+                    <input type="number" id="limit-clicks" placeholder="Límite" style="display:none; width: 80px;" min="1">
+                </div>
+                
+                <button onclick="addLink()">Crear Link +</button>
+            </div>
+
+            <button class="secondary" onclick="verMiPerfil()">Ver mi Perfil Público ↗</button>
+            <button class="secondary" style="margin-top: 5px; color: #ff4444;" onclick="logout()">Salir</button>
+        </div>
+
+        <!-- VISTA PERFIL PÚBLICO -->
+        <div id="view-profile" class="view">
+            <div class="profile-header">
+                <img src="" id="pub-avatar" class="avatar">
+                <h2 id="pub-name" style="margin: 5px 0;"></h2>
+                <p id="pub-bio" style="color: #666;"></p>
+            </div>
+            <div id="links-list"></div>
+            <p style="text-align: center; margin-top: 40px; font-size: 0.8rem; color: #ccc;">LinkExam</p>
+        </div>
+        <div id="toast" class="notification">Hecho</div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8000/api';
+        let currentUser = localStorage.getItem('linkhub_user');
+
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const profileUser = urlParams.get('user');
+
+        if (profileUser) { loadPublicProfile(profileUser); } 
+        else if (currentUser) { loadDashboard(JSON.parse(currentUser)); } 
+        else { showView('view-login'); }
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const name = document.getElementById('name').value;
+            const bio = document.getElementById('bio').value;
+            if(!email || !email.includes('@')) return alert('Email inválido');
+            
+            // Usamos estilo 'Notionists' para avatares pro
+            const avatarUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${name}`;
+            
+            const res = await fetch(`${API}/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, name, bio, avatar: avatarUrl })
+            });
+            const data = await res.json();
+            if(data.user) {
+                localStorage.setItem('linkhub_user', JSON.stringify(data.user));
+                currentUser = JSON.stringify(data.user);
+                loadDashboard(data.user);
+            }
+        }
+
+        async function loadDashboard(user) {
+            document.getElementById('dash-name').innerText = user.name;
+            document.getElementById('dash-avatar').src = user.avatar;
+            // Forzamos recarga del QR con timestamp para evitar caché
+            document.getElementById('qr-img').src = `${API}/qr/${user.email}?t=${Date.now()}`;
+            
+            // Cargar links con stats
+            const res = await fetch(`${API}/dashboard/${user.email}`);
+            const links = await res.json();
+            const list = document.getElementById('admin-links-list');
+            list.innerHTML = '';
+            
+            if(links.length === 0) list.innerHTML = '<p style="font-size: 0.8rem; color: #999; text-align: center;">No tienes links aún</p>';
+
+            links.forEach(link => {
+                const div = document.createElement('div');
+                div.style.padding = "10px";
+                div.style.borderBottom = "1px solid #eee";
+                div.style.fontSize = "0.9rem";
+                div.style.display = "flex";
+                div.style.justifyContent = "space-between";
+                
+                let extra = '';
+                if(link.is_snap) {
+                    extra = ` <span style="color: #ff4757; font-size: 0.7rem;">(Quedan: ${link.remaining})</span>`;
+                }
+                
+                div.innerHTML = `
+                    <span>${link.title}${extra}</span>
+                    <span style="font-weight: bold;">👁️ ${link.clicks}</span>
+                `;
+                list.appendChild(div);
+            });
+
+            showView('view-dashboard');
+        }
+
+        function toggleQR() {
+            const box = document.getElementById('qr-box');
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+        }
+        
+        function toggleLimitInput() {
+            const type = document.getElementById('link-type').value;
+            document.getElementById('limit-clicks').style.display = type === 'snap' ? 'block' : 'none';
+        }
+
+        async function addLink() {
+            const user = JSON.parse(currentUser);
+            const title = document.getElementById('new-title').value;
+            const url = document.getElementById('new-url').value;
+            const type = document.getElementById('link-type').value;
+            let max_clicks = null;
+
+            if(type === 'snap') {
+                max_clicks = document.getElementById('limit-clicks').value;
+                if(!max_clicks) return alert("Define el límite");
+            }
+
+            if(!title || !url) return;
+
+            await fetch(`${API}/links/add`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    email: user.email, title, url, 
+                    id: Date.now().toString(),
+                    max_clicks: max_clicks 
+                })
+            });
+            
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-url').value = '';
+            showToast('Link Creado');
+            loadDashboard(user); 
+        }
+
+        async function loadPublicProfile(email) {
+            try {
+                const res = await fetch(`${API}/profile/${email}`);
+                const data = await res.json();
+                document.getElementById('pub-name').innerText = data.user.name || "Usuario";
+                document.getElementById('pub-bio').innerText = data.user.bio || "";
+                document.getElementById('pub-avatar').src = data.user.avatar || "";
+                
+                const list = document.getElementById('links-list');
+                list.innerHTML = '';
+                data.links.forEach(link => {
+                    const a = document.createElement('a');
+                    a.className = 'link-btn';
+                    a.href = `${API.replace('/api', '')}/api/click?url=${encodeURIComponent(link.url)}&id=${link.id}`;
+                    a.target = "_blank"; 
+
+                    if(link.max_clicks) {
+                        a.onclick = () => {
+                            setTimeout(() => {
+                                loadPublicProfile(email); 
+                            }, 1000);
+                        };
+                    }
+                    
+                    let badge = '';
+                    if(link.max_clicks) {
+                        badge = `<span class="snap-badge">🔥 SnapLink</span>`;
+                    }
+                    
+                    a.innerHTML = `<div><span class="link-title">${link.title}</span>${badge}</div> <span>↗</span>`;
+                    list.appendChild(a);
+                });
+                showView('view-profile');
+            } catch(e) { alert("Perfil no encontrado"); }
+        }
+
+        function verMiPerfil() { window.location.href = `/?user=${JSON.parse(currentUser).email}`; }
+        function logout() { localStorage.removeItem('linkhub_user'); window.location.href = '/'; }
+        function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+    </script>
+</body>
+</html>

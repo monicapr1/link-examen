@@ -1,0 +1,78 @@
+version: '3'
+
+services:
+  # ----------------------------
+  # CONTENEDOR 1: Base de Datos (Redis)
+  # ----------------------------
+  db-redis:
+    image: redis:alpine
+    container_name: db-redis
+    ports:
+      - "6379:6379"
+
+  # ----------------------------
+  # CONTENEDOR 2: Cliente Web (Frontend)
+  # ----------------------------
+  frontend:
+    image: nginx:alpine
+    container_name: frontend
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    ports:
+      - "80:80"
+
+  # ----------------------------
+  # CONTENEDOR 3: Orquestador (Gateway)
+  # ----------------------------
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - ms-users
+      - ms-links
+      - ms-analytics
+      - ms-notifications
+
+  # ----------------------------
+  # CONTENEDOR 4: Microservicio de Usuarios
+  # ----------------------------
+  ms-users:
+    build: ./backend
+    container_name: ms-users
+    environment:
+      - SERVICE_TYPE=users
+    depends_on:
+      - db-redis
+
+  # ----------------------------
+  # CONTENEDOR 5: Microservicio de Links
+  # ----------------------------
+  ms-links:
+    build: ./backend
+    container_name: ms-links
+    environment:
+      - SERVICE_TYPE=links
+    depends_on:
+      - db-redis
+
+  # ----------------------------
+  # CONTENEDOR 6: Microservicio de Analytics 
+  # ----------------------------
+  ms-analytics:
+    build: ./backend
+    container_name: ms-analytics
+    environment:
+      - SERVICE_TYPE=analytics
+    depends_on:
+      - db-redis
+
+  # ----------------------------
+  # CONTENEDOR 7: Microservicio de Notificaciones 
+  # ----------------------------
+  ms-notifications:
+    build: ./backend
+    container_name: ms-notifications
+    environment:
+      - SERVICE_TYPE=notifications
