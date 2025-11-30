@@ -4,7 +4,7 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # --- CONFIGURACIÓN HÍBRIDA ---
 CLOUD_URL = os.getenv('BACKEND_URL')
